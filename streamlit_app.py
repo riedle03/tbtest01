@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd # pandas 라이브러리 추가 (Streamlit의 기본 시각화에 자주 사용됨)
 
 # --- 1. Streamlit 세션 상태 초기화 ---
 # 페이지 이동 및 설문 데이터를 관리하기 위한 세션 상태 변수 초기화
@@ -37,7 +38,7 @@ survey_questions = [
     {"id": "q11", "text": "나는 일을 시작한 후 학생들에게 **감정이 메말라졌습니다**. 🍂", "category": "DP"},
     {"id": "q12", "text": "나는 내가 **속수무책**인 것처럼 느껴질 때가 있습니다. 🤷", "category": "DP"},
     {"id": "q13", "text": "나는 일부 학생들에게 무슨 일이 일어나는지 **별로 신경 쓰지 않습니다**. 😐", "category": "DP"},
-    {"id": "q14", "text": "나는 학생들이 일부 그들의 문제 책임을 나에게 **돌리고 있다고** 느낍니다.  blaming", "category": "DP"},
+    {"id": "q14", "text": "나는 학생들이 일부 그들의 문제 책임을 나에게 **돌리고 있다고** 느낍니다. blaming", "category": "DP"},
     {"id": "q15", "text": "나는 학생들의 감정을 **잘 이해**합니다. 👍", "category": "RPA"}, # 역채점 필요
     {"id": "q16", "text": "나는 학생들의 문제를 **효과적으로 다룹니다**. ✅", "category": "RPA"}, # 역채점 필요
     {"id": "q17", "text": "나는 나의 일을 통해 다른 사람들에게 **긍정적인 영향을 주고** 있다고 느낍니다. ✨", "category": "RPA"}, # 역채점 필요
@@ -242,16 +243,41 @@ def result_page():
     st.markdown(f"### {stage_info['name']} {stage_info['emoji']}") # 이모지 추가
     st.write(f"_{stage_info['description']}_")
 
-    # 각 번아웃 차원별 점수 표시
-    st.subheader("세부 번아웃 지표")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric(label="감정 소진 (Emotional Exhaustion)", value=f"{st.session_state.ee_score}점")
-    with col2:
-        st.metric(label="비인격화 (Depersonalization)", value=f"{st.session_state.dp_score}점")
-    with col3:
-        st.metric(label="자아성취감 저하 (Reduced Personal Accomplishment)", value=f"{st.session_state.rpa_score}점")
+    st.markdown("---")
+
+    st.subheader("📈 세부 번아웃 지표")
+    # 세부 번아웃 지표 데이터프레임 생성
+    burnout_data = {
+        '지표': ['감정 소진 (Emotional Exhaustion)', '비인격화 (Depersonalization)', '자아성취감 저하 (Reduced Personal Accomplishment)'],
+        '점수': [st.session_state.ee_score, st.session_state.dp_score, st.session_state.rpa_score]
+    }
+    df_burnout = pd.DataFrame(burnout_data)
+
+    # 지표별 최대 점수 (차트 스케일링을 위해)
+    max_ee_score = 54 # 9문항 * 6점
+    max_dp_score = 30 # 5문항 * 6점
+    max_rpa_score = 48 # 8문항 * 6점 (역채점 후)
+
+    # 각 지표에 대한 개별 바 차트 (최대 점수를 고려하여 스케일링)
+    st.write("각 지표별 점수는 다음과 같습니다 (최대 점수 기준):")
     
+    col_ee, col_dp, col_rpa = st.columns(3)
+
+    with col_ee:
+        st.write(f"**감정 소진**")
+        st.progress(int((st.session_state.ee_score / max_ee_score) * 100))
+        st.write(f"{st.session_state.ee_score}점 (최대 {max_ee_score}점)")
+
+    with col_dp:
+        st.write(f"**비인격화**")
+        st.progress(int((st.session_state.dp_score / max_dp_score) * 100))
+        st.write(f"{st.session_state.dp_score}점 (최대 {max_dp_score}점)")
+
+    with col_rpa:
+        st.write(f"**자아성취감 저하**")
+        st.progress(int((st.session_state.rpa_score / max_rpa_score) * 100))
+        st.write(f"{st.session_state.rpa_score}점 (최대 {max_rpa_score}점)")
+
     st.markdown("---")
 
     st.subheader("🌟 나를 위한 맞춤형 권장사항")
@@ -264,7 +290,7 @@ def result_page():
     st.markdown("""
     보다 정확한 진단과 심층적인 상담이 필요하다면, 아래 전문 기관의 도움을 받아보세요.
     * **교원치유지원센터:** 각 시도 교육청에서 운영하며 교원들의 심리적 어려움을 지원합니다. (해당 지역 교육청 웹사이트 참고)
-    * **국가트라우마센터:** 재난 및 외상 후 스트레스 관리를 위한 전문 상담을 제공합니다. [국가트라우마센터](https://www.ncmh.go.kr/nct/)
+    * **국가트라우마센터:** 재난 및 외상 후 스트레스 관리를 위한 전문 상담을 제공합니다. [국가트라우마센터](https://www.nct.go.kr/)
     * **정신건강복지센터:** 지역사회 기반의 정신건강 증진 및 상담 서비스를 제공합니다. (거주 지역 정신건강복지센터 검색)
     """)
 
